@@ -50,6 +50,7 @@
             </div>
             <div class="col-md-6">
                 <h1 id="movie-title"></h1>
+                <p id="movie-rating" class="text-warning fw-bold"></p>
                 <p id="movie-description"></p>
                 <p class="movie-info" id="movie-genre"></p>
                 <p class="movie-info" id="movie-actors"></p>
@@ -73,11 +74,11 @@
         document.addEventListener("DOMContentLoaded", async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const movieId = urlParams.get("movie");
-
+    
             try {
                 const response = await fetch(`get_movie.php?id=${movieId}`);
                 const movie = await response.json();
-
+    
                 if (movie) {
                     document.getElementById("movie-title").innerText = movie.title;
                     document.getElementById("movie-img").src = movie.image;
@@ -85,11 +86,29 @@
                     document.getElementById("movie-genre").innerHTML = "<strong>Жанр:</strong> " + movie.genre;
                     document.getElementById("movie-actors").innerHTML = "<strong>Актьори:</strong> " + movie.actors;
                     document.getElementById("movie-duration").innerHTML = "<strong>Времетраене:</strong> " + movie.duration;
+    
                     if (movie.video_url) {
                         document.getElementById("movie-video").innerHTML = `
                             <iframe width="560" height="315" src="${movie.video_url}" frameborder="0" allowfullscreen></iframe>
                         `;
                     }
+    
+                    try {
+                        const reviewsResponse = await fetch(`get_reviews.php?movie_id=${movieId}`);
+                        const reviews = await reviewsResponse.json();
+    
+                        if (reviews.length > 0) {
+                            const total = reviews.reduce((sum, review) => sum + parseFloat(review.rating), 0);
+                            const average = (total / reviews.length).toFixed(1);
+                            document.getElementById("movie-rating").innerText = `Средна оценка: ${average} / 10`;
+                        } else {
+                            document.getElementById("movie-rating").innerText = "Все още няма оценки.";
+                        }
+                    } catch (reviewsError) {
+                        console.error("Грешка при зареждане на ревютата:", reviewsError);
+                        document.getElementById("movie-rating").innerText = "Грешка при зареждане на оценките.";
+                    }
+    
                 } else {
                     document.getElementById("movie-title").innerText = "Филмът не е намерен";
                 }
@@ -97,6 +116,8 @@
                 console.error("Грешка при зареждане на данните:", error);
             }
         });
+    </script>
+    
     </script>
 </body>
 </html>
